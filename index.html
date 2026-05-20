@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>🐾 Dog Walk Scheduler</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700&family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --c1:#D5C2DF;--c1t:#7a5a8a;--c1b:#bfa8cf;
+  --c2:#D1D8F0;--c2t:#4a5a9a;--c2b:#aab4e0;
+  --c3:#DAEFFA;--c3t:#3a7ab5;--c3b:#a0ccee;
+  --c6:#FCCECA;--c6t:#a03a30;--c6b:#f0a098;
+  --solo-bg:#DAEFFA;--solo-border:#a0ccee;--solo-text:#3a7ab5;
+  --group-bg:#F3FFED;--group-border:#b8e8a8;--group-text:#4a8a3a;
+  --multi-bg:#FDEFD5;--multi-border:#f0cc88;--multi-text:#9a6a1a;
+  --bg:#faf8fc;--card:#fff;--text:#2d2040;--muted:#8a7a9a;
+  --border:#e8e0f0;--radius:16px;--shadow:0 2px 16px rgba(120,90,160,.07);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+.app-header{background:linear-gradient(135deg,var(--c1),var(--c2) 50%,var(--c3));padding:18px 24px 14px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;border-bottom:1px solid var(--c1b)}
+.app-title{font-family:'Quicksand',sans-serif;font-size:22px;font-weight:700;color:var(--c1t)}
+.header-right{display:flex;gap:8px;flex-wrap:wrap}
+.week-bar{background:var(--c2);border-bottom:1px solid var(--c2b);padding:10px 24px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.week-bar label{font-size:13px;font-weight:600;color:var(--c2t)}
+#weekLabel{border:1px solid var(--c2b);border-radius:10px;padding:6px 10px;font-size:13px;font-family:'Nunito',sans-serif;background:#fff;color:var(--text);width:220px}
+.gs-status{font-size:12px;padding:4px 12px;border-radius:20px;font-weight:600;margin-left:auto}
+.gs-status.ok{background:var(--group-bg);color:var(--group-text);border:1px solid var(--group-border)}
+.gs-status.bad{background:var(--c6);color:var(--c6t);border:1px solid var(--c6b)}
+.gs-status.busy{background:var(--multi-bg);color:var(--multi-text);border:1px solid var(--multi-border)}
+.app-body{max-width:1140px;margin:0 auto;padding:20px 16px;display:grid;grid-template-columns:350px 1fr;gap:20px;align-items:start}
+@media(max-width:820px){.app-body{grid-template-columns:1fr}}
+.panel{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;margin-bottom:16px;box-shadow:var(--shadow)}
+.sec-label{font-family:'Quicksand',sans-serif;font-size:11px;font-weight:700;color:var(--c1t);text-transform:uppercase;letter-spacing:.1em;margin-bottom:12px;display:flex;align-items:center;gap:6px}
+.sec-label::after{content:'';flex:1;height:1px;background:var(--border)}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
+.form-row-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:8px}
+.field label{font-size:12px;font-weight:600;color:var(--muted);display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:.04em}
+.field input,.field select,.field textarea{width:100%;border:1px solid var(--border);border-radius:10px;padding:7px 10px;font-size:13px;font-family:'Nunito',sans-serif;color:var(--text);background:#fff}
+.field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:var(--c1b)}
+.field textarea{resize:vertical;min-height:52px}
+.btn{padding:9px 14px;border-radius:10px;font-size:13px;font-weight:700;font-family:'Nunito',sans-serif;cursor:pointer;border:1px solid transparent;display:inline-flex;align-items:center;justify-content:center;gap:5px;transition:opacity .15s}
+.btn:hover{opacity:.82}
+.btn-primary{background:var(--c1);border-color:var(--c1b);color:var(--c1t);width:100%}
+.btn-auto{background:var(--multi-bg);border-color:var(--multi-border);color:var(--multi-text);width:100%}
+.btn-save{background:var(--group-bg);border-color:var(--group-border);color:var(--group-text)}
+.btn-load{background:var(--c3);border-color:var(--c3b);color:var(--c3t)}
+.btn-danger{background:var(--c6);border-color:var(--c6b);color:var(--c6t)}
+.btn-plain{background:none;border-color:var(--border);color:var(--muted)}
+.btn-sm{padding:5px 10px;font-size:12px}
+.qb-section{background:var(--c2);border:1px solid var(--c2b);border-radius:12px;padding:10px 12px;margin-bottom:10px}
+.qb-section.disabled{opacity:.4;pointer-events:none}
+.qb-label{font-size:12px;font-weight:700;color:var(--c2t);margin-bottom:8px}
+.qb-hint{font-size:11px;color:var(--c2t);margin-top:4px;font-style:italic}
+.dog-list{display:flex;flex-direction:column;gap:6px;margin-top:10px}
+.dog-chip{background:linear-gradient(135deg,var(--c1),var(--c3));border:1px solid var(--c2b);border-radius:12px;padding:9px 12px;font-size:13px}
+.chip-top{display:flex;align-items:flex-start;justify-content:space-between;gap:6px}
+.chip-left{display:flex;flex-direction:column;gap:4px;flex:1;min-width:0}
+.chip-row{display:flex;align-items:center;gap:5px;flex-wrap:wrap}
+.chip-right{display:flex;align-items:center;gap:5px;flex-shrink:0}
+.badge{font-size:11px;padding:2px 8px;border-radius:20px;font-weight:700;white-space:nowrap}
+.solo-b{background:var(--solo-bg);color:var(--solo-text);border:1px solid var(--solo-border)}
+.group-b{background:var(--group-bg);color:var(--group-text);border:1px solid var(--group-border)}
+.paid-b{background:var(--group-bg);color:var(--group-text);border:1px solid var(--group-border)}
+.unpaid-b{background:var(--c6);color:var(--c6t);border:1px solid var(--c6b)}
+.info-b{background:var(--c3);color:var(--c3t);border:1px solid var(--c3b)}
+.muted-txt{font-size:11px;color:var(--muted)}
+.rmv-btn{background:none;border:none;cursor:pointer;color:var(--c6t);font-size:20px;line-height:1;padding:0 2px;opacity:.7;font-family:inherit}
+.rmv-btn:hover{opacity:1}
+.chip-notes{font-size:12px;color:var(--muted);margin-top:5px;padding-top:5px;border-top:1px solid rgba(120,90,160,.15)}
+.paid-label{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:var(--muted);cursor:pointer}
+.paid-label input{width:13px;height:13px;accent-color:var(--c1t);cursor:pointer}
+.auto-box{background:var(--multi-bg);border:1px solid var(--multi-border);border-radius:12px;padding:10px 12px;margin-bottom:10px}
+.auto-box-label{font-size:12px;font-weight:700;color:var(--multi-text);margin-bottom:8px}
+.auto-note{font-size:12px;color:var(--multi-text);line-height:1.5;margin-bottom:8px}
+.gs-box{background:var(--group-bg);border:1px solid var(--group-border);border-radius:12px;padding:12px;margin-bottom:10px}
+.gs-box-label{font-size:12px;font-weight:700;color:var(--group-text);margin-bottom:8px}
+.gs-url-row{display:flex;gap:6px;margin-bottom:6px}
+.gs-url-row input{flex:1;border:1px solid var(--group-border);border-radius:8px;padding:6px 10px;font-size:12px;font-family:'Nunito',sans-serif;background:#fff;color:var(--text)}
+.gs-note{font-size:11px;color:var(--group-text);line-height:1.5}
+.schedule-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;table-layout:fixed;min-width:520px}
+th{font-size:11px;font-weight:700;color:var(--c1t);text-transform:uppercase;letter-spacing:.06em;padding:7px 4px;text-align:center;border-bottom:2px solid var(--c1b);background:var(--bg)}
+th.tc{text-align:left;width:60px}
+td{padding:2px;text-align:center;vertical-align:middle}
+td.ttime{font-size:11px;font-weight:600;color:var(--muted);text-align:left;white-space:nowrap;padding-right:4px}
+.slot{min-height:38px;border:1px dashed var(--c2b);border-radius:10px;cursor:pointer;position:relative;display:flex;align-items:center;justify-content:center;overflow:hidden;transition:background .12s}
+.slot:hover{background:var(--c2);border-style:solid}
+.slot.solo-slot{background:var(--solo-bg);border:1px solid var(--solo-border)}
+.slot.solo-cont{background:var(--solo-bg);border:1px solid var(--solo-border);opacity:.5;cursor:not-allowed;pointer-events:none}
+.slot.group-slot{background:var(--group-bg);border:1px solid var(--group-border)}
+.slot.group-cont{background:var(--group-bg);border:1px solid var(--group-border);opacity:.5;cursor:not-allowed;pointer-events:none}
+.slot.multi-slot{background:var(--multi-bg);border:1px solid var(--multi-border)}
+.slot.multi-cont{background:var(--multi-bg);border:1px solid var(--multi-border);opacity:.5;cursor:not-allowed;pointer-events:none}
+.slot-txt{font-size:9px;font-weight:700;line-height:1.35;color:var(--text);padding:2px 14px 2px 3px;text-align:center;word-break:break-word}
+.slot-plus{font-size:16px;color:var(--c1t);opacity:.3}
+.slot-x{position:absolute;top:1px;right:2px;background:none;border:none;cursor:pointer;color:var(--c6t);font-size:12px;line-height:1;padding:2px;opacity:.7;font-family:inherit}
+.slot-x:hover{opacity:1}
+.legend{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+.leg-item{display:flex;align-items:center;gap:5px;font-size:12px;font-weight:600;color:var(--muted)}
+.leg-dot{width:11px;height:11px;border-radius:50%}
+.summary-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
+.metric{border-radius:12px;padding:10px 12px}
+.metric-lbl{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px}
+.metric-val{font-size:22px;font-weight:700}
+.m1{background:var(--c1)}.m1 .metric-val{color:var(--c1t)}
+.m2{background:var(--c2)}.m2 .metric-val{color:var(--c2t)}
+.m3{background:var(--c3)}.m3 .metric-val{color:var(--c3t)}
+.m4{background:var(--group-bg)}.m4 .metric-val{color:var(--group-text)}
+.m5{background:var(--multi-bg)}.m5 .metric-val{color:var(--multi-text)}
+.m6{background:var(--c6)}.m6 .metric-val{color:var(--c6t)}
+.breakdown{display:flex;flex-direction:column;gap:5px}
+.brow{display:flex;justify-content:space-between;align-items:center;font-size:13px;padding:6px 10px;background:var(--c1);border-radius:10px;border:1px solid var(--c1b)}
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(100,70,140,.2);backdrop-filter:blur(2px);z-index:100;align-items:center;justify-content:center;padding:20px}
+.modal-bg.open{display:flex}
+.modal{background:var(--card);border:1px solid var(--c1b);border-radius:var(--radius);padding:20px;width:340px;max-width:96vw;max-height:90vh;overflow-y:auto;box-shadow:0 8px 40px rgba(120,90,160,.18)}
+.modal h3{font-family:'Quicksand',sans-serif;font-size:16px;font-weight:700;margin-bottom:14px;color:var(--c1t)}
+.mfield{margin-bottom:10px}
+.mfield label{font-size:12px;font-weight:700;color:var(--muted);display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:.04em}
+.mfield select{width:100%;border:1px solid var(--border);border-radius:10px;padding:7px 10px;font-size:13px;font-family:'Nunito',sans-serif;color:var(--text);background:#fff}
+.mrow{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
+.dpick-list{display:flex;flex-direction:column;gap:5px;max-height:200px;overflow-y:auto;margin-bottom:10px}
+.dpick{display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--c1);border:1px solid var(--c1b);border-radius:10px;cursor:pointer;font-size:13px;width:100%;text-align:left;font-family:'Nunito',sans-serif}
+.dpick:hover:not([disabled]){background:var(--c3);border-color:var(--c3b)}
+.dpick[disabled]{opacity:.4;cursor:not-allowed}
+.dpick input[type=checkbox]{accent-color:var(--c1t);width:14px;height:14px;flex-shrink:0;pointer-events:none}
+.modal-actions{display:flex;gap:8px;margin-top:12px}
+.warn-txt{font-size:12px;color:var(--c6t);min-height:18px;margin-top:4px}
+.empty-txt{text-align:center;color:var(--muted);font-size:13px;padding:12px 0}
+.week-list{display:flex;flex-direction:column;gap:6px;max-height:320px;overflow-y:auto;margin-bottom:10px}
+.week-item{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:var(--c1);border:1px solid var(--c1b);border-radius:10px;font-size:13px;gap:8px}
+.week-item-label{font-weight:700;color:var(--c1t)}
+.week-item-meta{font-size:11px;color:var(--muted);margin-top:2px}
+.week-actions{display:flex;gap:5px;flex-shrink:0}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);padding:10px 20px;border-radius:12px;font-size:13px;font-weight:700;z-index:200;opacity:0;transition:opacity .3s;pointer-events:none;box-shadow:0 4px 20px rgba(0,0,0,.1);background:var(--group-bg);border:1px solid var(--group-border);color:var(--group-text);white-space:nowrap}
+.toast.show{opacity:1}
+.toast.err{background:var(--c6);border-color:var(--c6b);color:var(--c6t)}
+</style>
+</head>
+<body>
+<div class="toast" id="toast"></div>
+
+<div class="app-header">
+  <div class="app-title">🐾 Dog Walk Scheduler</div>
+  <div class="header-right">
+    <button class="btn btn-load" id="btnOpenWeeks">📅 Load Week</button>
+    <button class="btn btn-save" id="btnSaveWeek">💾 Save Week</button>
+  </div>
+</div>
+
+<div class="week-bar">
+  <label for="weekLabel">Current week:</label>
+  <input type="text" id="weekLabel" placeholder="e.g. Week of 19 May 2026"/>
+  <span class="gs-status bad" id="gsStatus">⚡ Not connected</span>
+</div>
+
+<div class="app-body">
+  <div>
+    <div class="panel">
+      <div class="sec-label">🐶 Add a dog</div>
+      <div class="form-row-3">
+        <div class="field"><label>Name</label><input type="text" id="dogName" placeholder="Buddy"/></div>
+        <div class="field"><label>Sessions/wk</label>
+          <select id="dogSessions">
+            <option value="1">1 session</option>
+            <option value="3">3 sessions</option>
+          </select>
+        </div>
+        <div class="field"><label>Walk type</label>
+          <select id="dogType">
+            <option value="solo">Solo only</option>
+            <option value="group">OK with others</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="field"><label>Notes</label><textarea id="dogNotes" placeholder="e.g. pulls on lead..."></textarea></div>
+        <div class="field" style="display:flex;flex-direction:column;justify-content:flex-end;gap:8px">
+          <label class="paid-label"><input type="checkbox" id="dogPaid"/> Paid</label>
+        </div>
+      </div>
+      <div class="qb-section" id="qbSection">
+        <div class="qb-label">📅 Quick-book this session</div>
+        <div class="form-row">
+          <div class="field"><label>Day</label><select id="qbDay"></select></div>
+          <div class="field"><label>Start</label><select id="qbStart"></select></div>
+        </div>
+        <div class="form-row">
+          <div class="field"><label>End</label><select id="qbEnd"></select></div>
+          <div class="field" style="display:flex;align-items:flex-end;padding-bottom:4px">
+            <span id="qbDuration" style="font-size:12px;font-weight:600;color:var(--c2t)"></span>
+          </div>
+        </div>
+        <div class="qb-hint" id="qbHint"></div>
+      </div>
+      <button class="btn btn-primary" id="btnAddDog">+ Add dog</button>
+      <div id="dogList" class="dog-list"></div>
+    </div>
+
+    <div class="panel">
+      <div class="sec-label">✨ Auto-schedule</div>
+      <div class="auto-box">
+        <div class="auto-box-label">Settings</div>
+        <div class="form-row">
+          <div class="field"><label>Default start</label><select id="autoStart"></select></div>
+          <div class="field"><label>Duration</label>
+            <select id="autoDur">
+              <option value="30">30 min</option>
+              <option value="60" selected>1 hour</option>
+              <option value="90">1.5 hours</option>
+              <option value="120">2 hours</option>
+            </select>
+          </div>
+        </div>
+        <div class="auto-note">3-session dogs go Mon/Wed/Fri. Group dogs share slots. Remaining dogs spread across the lightest days.</div>
+        <button class="btn btn-auto" id="btnAuto">✨ Auto-schedule unscheduled dogs</button>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="sec-label">📊 Google Sheets</div>
+      <div class="gs-box">
+        <div class="gs-box-label">🔗 Apps Script Web App URL</div>
+        <div class="gs-url-row">
+          <input type="text" id="gsUrl" placeholder="Paste your Web App URL here..."/>
+          <button class="btn btn-sm btn-save" id="btnTestGs">Test</button>
+        </div>
+        <div class="gs-note">Paste the URL from your deployed Google Apps Script. See README for setup.</div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="sec-label">📈 Summary</div>
+      <div class="summary-grid">
+        <div class="metric m1"><div class="metric-lbl">Dogs</div><div class="metric-val" id="sumDogs">0</div></div>
+        <div class="metric m2"><div class="metric-lbl">Sessions</div><div class="metric-val" id="sumAdded">0</div></div>
+        <div class="metric m3"><div class="metric-lbl">Scheduled</div><div class="metric-val" id="sumSessions">0</div></div>
+        <div class="metric m5"><div class="metric-lbl">Revenue</div><div class="metric-val" id="sumRevenue">$0</div></div>
+        <div class="metric m4"><div class="metric-lbl">Paid</div><div class="metric-val" id="sumPaid">$0</div></div>
+        <div class="metric m6"><div class="metric-lbl">Owed</div><div class="metric-val" id="sumOwed">$0</div></div>
+      </div>
+      <div class="breakdown" id="breakdown"></div>
+    </div>
+  </div>
+
+  <div>
+    <div class="panel">
+      <div class="sec-label">📅 Weekly schedule</div>
+      <div class="legend">
+        <div class="leg-item"><div class="leg-dot" style="background:var(--solo-text)"></div>Solo</div>
+        <div class="leg-item"><div class="leg-dot" style="background:var(--group-text)"></div>Group</div>
+        <div class="leg-item"><div class="leg-dot" style="background:var(--multi-text)"></div>Multi-session</div>
+        <div class="leg-item"><div class="leg-dot" style="border:1px dashed var(--c2b)"></div>Available</div>
+      </div>
+      <div class="schedule-wrap"><table id="schedTable"></table></div>
+    </div>
+  </div>
+</div>
+
+<!-- BOOK MODAL -->
+<div class="modal-bg" id="bookModal">
+  <div class="modal">
+    <h3 id="bookTitle">Book a slot</h3>
+    <div class="mrow">
+      <div class="mfield"><label>Day</label><select id="mDay"></select></div>
+      <div class="mfield"><label>Start</label><select id="mStart"></select></div>
+    </div>
+    <div class="mrow">
+      <div class="mfield"><label>End</label><select id="mEnd"></select></div>
+      <div class="mfield" style="display:flex;align-items:flex-end;padding-bottom:4px">
+        <span id="mDur" style="font-size:12px;font-weight:600;color:var(--c2t)"></span>
+      </div>
+    </div>
+    <div style="font-size:12px;font-weight:700;color:var(--c1t);margin-bottom:8px;text-transform:uppercase;letter-spacing:.04em">Select dog(s)</div>
+    <div class="dpick-list" id="dpickList"></div>
+    <div class="warn-txt" id="bookWarn"></div>
+    <div class="modal-actions">
+      <button class="btn btn-primary" style="flex:1" id="btnBook">Book</button>
+      <button class="btn btn-plain" style="flex:1" id="btnCancelBook">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- WEEKS MODAL -->
+<div class="modal-bg" id="weeksModal">
+  <div class="modal">
+    <h3>📅 Saved Weeks</h3>
+    <div class="week-list" id="weekList"><div class="empty-txt">Loading...</div></div>
+    <div class="modal-actions">
+      <button class="btn btn-plain" style="flex:1" id="btnCloseWeeks">Close</button>
+    </div>
+  </div>
+</div>
+
+<script>
+'use strict';
+const DAYS=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+const TIMES=[];
+for(let h=6;h<=20;h++){TIMES.push(h+':00');TIMES.push(h+':30');}
+TIMES.push('21:00');
+const RATES={solo1:20,group:15,solo3:50};
+
+let dogs=[],sched={},nid=1,pending=null,gsUrl='',weekId=String(Date.now());
+
+function toM(t){const[h,m]=t.split(':').map(Number);return h*60+(m||0);}
+function addM(t,m){const x=toM(t)+m,h=Math.floor(x/60),mn=x%60;return h+':'+(mn?String(mn).padStart(2,'0'):'00');}
+function dur(s,e){const d=toM(e)-toM(s);if(d<=0)return '';return d>=60?Math.floor(d/60)+'h'+(d%60?d%60+'m':''):d+'m';}
+function inRange(s,e){return TIMES.filter(t=>toM(t)>=toM(s)&&toM(t)<toM(e));}
+function key(d,t){return d+'|'+t;}
+function h(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+function rev(dog){if(dog.type==='group')return RATES.group*dog.sessions;if(dog.sessions===3)return RATES.solo3;return RATES.solo1;}
+function nSched(dog){return Object.values(sched).reduce((n,a)=>n+a.filter(b=>b.did===dog.id&&b.head).length,0);}
+
+function fillSel(el,opts,val){el.innerHTML=opts.map(o=>'<option'+(o===val?' selected':'')+'>'+h(o)+'</option>').join('');}
+function syncEnd(sEl,eEl,snap){
+  const sv=sEl.value,opts=TIMES.filter(t=>toM(t)>toM(sv));
+  const want=snap?addM(sv,60):null;
+  const pick=(want&&opts.includes(want))?want:(opts.includes(eEl.value)?eEl.value:opts[0]);
+  fillSel(eEl,opts,pick);
+}
+
+/* GS — uses JSONP to avoid CORS issues with Google Apps Script */
+function setStatus(s,msg){
+  const el=document.getElementById('gsStatus');
+  const map={ok:['ok','✓ Connected'],bad:['bad','⚡ Not connected'],busy:['busy','⏳ Working...'],err:['bad','✗ '+(msg||'Error')]};
+  const[cls,txt]=map[s]||map.bad;
+  el.className='gs-status '+cls;el.textContent=txt;
+}
+
+function gs(params){
+  return new Promise((resolve,reject)=>{
+    if(!gsUrl){reject(new Error('No URL set'));return;}
+    // unique callback name
+    const cbName='_gsCb'+Date.now();
+    const timeout=setTimeout(()=>{
+      delete window[cbName];
+      const s=document.getElementById('_jsonpScript');
+      if(s)s.remove();
+      reject(new Error('Request timed out. Check your Apps Script URL.'));
+    },15000);
+    window[cbName]=function(data){
+      clearTimeout(timeout);
+      delete window[cbName];
+      const s=document.getElementById('_jsonpScript');
+      if(s)s.remove();
+      if(data&&data.error)reject(new Error(data.error));
+      else resolve(data);
+    };
+    const q=Object.entries({...params,callback:cbName})
+      .map(([k,v])=>encodeURIComponent(k)+'='+encodeURIComponent(v)).join('&');
+    const script=document.createElement('script');
+    script.id='_jsonpScript';
+    script.src=gsUrl+'?'+q;
+    script.onerror=()=>{
+      clearTimeout(timeout);delete window[cbName];
+      reject(new Error('Script load failed. Check your Apps Script URL and that access is set to "Anyone".'));
+    };
+    document.head.appendChild(script);
+  });
+}
+async function testGs(){
+  const url=document.getElementById('gsUrl').value.trim();
+  if(!url){toast('Paste your Apps Script URL first','err');return;}
+  gsUrl=url;localStorage.setItem('gsUrl',gsUrl);
+  setStatus('busy');
+  try{await gs({action:'getWeeks'});setStatus('ok');toast('Connected to Google Sheets!');}
+  catch(e){setStatus('err',e.message);toast('Failed: '+e.message,'err');}
+}
+async function saveWeek(){
+  const lbl=document.getElementById('weekLabel').value.trim()||'Unnamed week';
+  if(!gsUrl){toast('Connect to Google Sheets first','err');return;}
+  setStatus('busy');
+  const entries=[];
+  DAYS.forEach(day=>{
+    const seen=new Set();
+    TIMES.forEach(t=>{
+      (sched[key(day,t)]||[]).filter(b=>b.head).forEach(b=>{
+        const k=b.did+'|'+b.start;
+        if(!seen.has(k)){seen.add(k);const dog=dogs.find(d=>d.id===b.did);entries.push({dogId:b.did,dogName:dog?dog.name:'?',day,startTime:b.start,endTime:b.end,dogType:b.dt});}
+      });
+    });
+  });
+  try{
+    await gs({action:'saveWeek',data:JSON.stringify({weekId,weekLabel:lbl,dogs:dogs.map(d=>({...d,revenue:rev(d)})),schedule:entries})});
+    setStatus('ok');toast('Week saved!');
+  }catch(e){setStatus('err',e.message);toast('Save failed: '+e.message,'err');}
+}
+async function openWeeks(){
+  document.getElementById('weeksModal').classList.add('open');
+  document.getElementById('weekList').innerHTML='<div class="empty-txt">Loading...</div>';
+  if(!gsUrl){document.getElementById('weekList').innerHTML='<div class="empty-txt">Connect to Google Sheets first.</div>';return;}
+  try{
+    const res=await gs({action:'getWeeks'});
+    const weeks=(res.weeks||[]).slice().reverse();
+    if(!weeks.length){document.getElementById('weekList').innerHTML='<div class="empty-txt">No saved weeks yet.</div>';return;}
+    document.getElementById('weekList').innerHTML=weeks.map(w=>
+      '<div class="week-item">'+
+        '<div><div class="week-item-label">'+h(w.label||w.week)+'</div>'+
+        '<div class="week-item-meta">$'+(w.totalRevenue||0)+' revenue · $'+(w.totalPaid||0)+' paid · '+(w.totalDogs||0)+' dogs</div></div>'+
+        '<div class="week-actions">'+
+          '<button class="btn btn-sm btn-load" data-wid="'+h(w.week)+'" data-wlbl="'+h(w.label||'')+'">Load</button>'+
+          '<button class="btn btn-sm btn-danger" data-wdel="'+h(w.week)+'">Del</button>'+
+        '</div>'+
+      '</div>'
+    ).join('');
+    document.querySelectorAll('[data-wid]').forEach(b=>b.addEventListener('click',()=>loadWeek(b.dataset.wid,b.dataset.wlbl)));
+    document.querySelectorAll('[data-wdel]').forEach(b=>b.addEventListener('click',()=>delWeek(b.dataset.wdel)));
+  }catch(e){document.getElementById('weekList').innerHTML='<div class="empty-txt">Error: '+h(e.message)+'</div>';}
+}
+async function loadWeek(wid,wlbl){
+  try{
+    const res=await gs({action:'getWeek',week:wid});
+    dogs=(res.dogs||[]).map(d=>({...d,id:d.dogId||d.id,sessions:Number(d.sessions),paid:d.paid===true||d.paid==='TRUE'||d.paid===1}));
+    nid=dogs.reduce((mx,d)=>Math.max(mx,parseInt(d.id||0)+1),1);
+    sched={};
+    (res.schedule||[]).forEach(s=>{
+      inRange(s.startTime,s.endTime).forEach((t,i)=>{
+        const k=key(s.day,t);if(!sched[k])sched[k]=[];
+        sched[k].push({did:s.dogId,dt:s.dogType,head:i===0,start:s.startTime,end:s.endTime});
+      });
+    });
+    weekId=wid;document.getElementById('weekLabel').value=wlbl;
+    document.getElementById('weeksModal').classList.remove('open');
+    render();toast('Week loaded!');
+  }catch(e){toast('Load failed: '+e.message,'err');}
+}
+async function delWeek(wid){
+  if(!confirm('Delete this week?'))return;
+  try{await gs({action:'deleteWeek',week:wid});toast('Deleted.');openWeeks();}
+  catch(e){toast('Delete failed: '+e.message,'err');}
+}
+
+/* AUTO */
+function dayLoad(day){let n=0;TIMES.forEach(t=>{n+=(sched[key(day,t)]||[]).filter(b=>b.head).length;});return n;}
+function timeFree(day,s,e){return inRange(s,e).every(t=>!(sched[key(day,t)]||[]).length);}
+function addSession(did,dt,day,s,e){
+  inRange(s,e).forEach((t,i)=>{const k=key(day,t);if(!sched[k])sched[k]=[];sched[k].push({did,dt,head:i===0,start:s,end:e});});
+}
+function autoSched(){
+  const st=document.getElementById('autoStart').value,d=parseInt(document.getElementById('autoDur').value);
+  const et=addM(st,d),tri=['Mon','Wed','Fri'];let placed=0;
+  const tg=dogs.filter(x=>x.sessions===3&&x.type==='group'&&nSched(x)<3);
+  if(tg.length){tri.forEach(day=>{tg.forEach(x=>{if((sched[key(day,st)]||[]).some(b=>b.did===x.id))return;inRange(st,et).forEach((t,i)=>{const k=key(day,t);if(!sched[k])sched[k]=[];sched[k].push({did:x.id,dt:'group',head:i===0,start:st,end:et});});placed++;});});}
+  dogs.filter(x=>x.sessions===3&&x.type==='solo'&&nSched(x)<3).forEach(x=>{
+    tri.forEach(day=>{if(nSched(x)>=3)return;for(let o=0;o<16;o++){const ts=addM(st,o*30),te=addM(ts,d);if(toM(te)>toM('20:00'))break;if(timeFree(day,ts,te)){addSession(x.id,'solo',day,ts,te);placed++;break;}}});
+  });
+  dogs.filter(x=>x.sessions===1&&nSched(x)<1).forEach(x=>{
+    const ord=[...DAYS].sort((a,b)=>{const df=dayLoad(a)-dayLoad(b);return df||DAYS.indexOf(a)-DAYS.indexOf(b);});
+    for(const day of ord){let ok=false;for(let o=0;o<16;o++){const ts=addM(st,o*30),te=addM(ts,d);if(toM(te)>toM('20:00'))break;const free=inRange(ts,te).every(t=>{const bks=sched[key(day,t)]||[];return x.type==='solo'?bks.length===0:!bks.some(b=>b.dt==='solo'||!b.head);});if(free){addSession(x.id,x.type,day,ts,te);placed++;ok=true;break;}}if(ok)break;}
+  });
+  render();toast(placed?'Scheduled '+placed+' session'+(placed!==1?'s':'')+'!':'Nothing to schedule.');
+}
+
+/* DOGS */
+function addDog(){
+  const name=document.getElementById('dogName').value.trim();
+  if(!name){document.getElementById('dogName').focus();return;}
+  const sessions=parseInt(document.getElementById('dogSessions').value),type=document.getElementById('dogType').value;
+  const notes=document.getElementById('dogNotes').value.trim(),paid=document.getElementById('dogPaid').checked;
+  const id=String(nid++);
+  dogs.push({id,name,sessions,type,notes,paid});
+  if(sessions===1){
+    const day=document.getElementById('qbDay').value,s=document.getElementById('qbStart').value,e=document.getElementById('qbEnd').value;
+    if(day){inRange(s,e).forEach((t,i)=>{const k=key(day,t);if(!sched[k])sched[k]=[];sched[k].push({did:id,dt:type,head:i===0,start:s,end:e});});}
+  }
+  document.getElementById('dogName').value='';document.getElementById('dogNotes').value='';
+  document.getElementById('dogPaid').checked=false;document.getElementById('qbDay').value='';
+  render();
+}
+function removeDog(id){
+  dogs=dogs.filter(d=>d.id!==id);
+  Object.keys(sched).forEach(k=>{sched[k]=sched[k].filter(b=>b.did!==id);if(!sched[k].length)delete sched[k];});
+  render();
+}
+function togglePaid(id){const d=dogs.find(x=>x.id===id);if(d)d.paid=!d.paid;renderDogs();renderSummary();}
+
+/* RENDER */
+function renderDogs(){
+  const el=document.getElementById('dogList');
+  if(!dogs.length){el.innerHTML='<div class="empty-txt">No dogs added yet</div>';return;}
+  el.innerHTML=dogs.map(d=>{
+    const s=nSched(d),r=rev(d);
+    const slots=[];
+    DAYS.forEach(day=>{const seen=new Set();TIMES.forEach(t=>{const b=(sched[key(day,t)]||[]).find(b=>b.did===d.id&&b.head);if(b&&!seen.has(b.start)){seen.add(b.start);slots.push(day+' '+b.start+'–'+b.end);}});});
+    return '<div class="dog-chip">'+
+      '<div class="chip-top">'+
+        '<div class="chip-left">'+
+          '<div class="chip-row"><span style="font-weight:700">'+h(d.name)+'</span><span class="badge '+(d.type==='solo'?'solo-b':'group-b')+'">'+d.type+'</span><span class="muted-txt">'+s+'/'+d.sessions+' scheduled</span></div>'+
+          '<div class="chip-row">'+slots.map(sl=>'<span class="badge info-b">'+h(sl)+'</span>').join('')+'</div>'+
+        '</div>'+
+        '<div class="chip-right">'+
+          '<label class="paid-label"><input type="checkbox" data-pid="'+h(d.id)+'"'+(d.paid?' checked':'')+'/> Paid</label>'+
+          '<span class="badge '+(d.paid?'paid-b':'unpaid-b')+'">'+(d.paid?'paid':'unpaid')+'</span>'+
+          '<span style="font-size:12px;font-weight:700;color:var(--group-text)">$'+r+'</span>'+
+          '<button class="rmv-btn" data-rid="'+h(d.id)+'">×</button>'+
+        '</div>'+
+      '</div>'+
+      (d.notes?'<div class="chip-notes">📝 '+h(d.notes)+'</div>':'')+
+    '</div>';
+  }).join('');
+  document.querySelectorAll('[data-rid]').forEach(b=>b.addEventListener('click',()=>removeDog(b.dataset.rid)));
+  document.querySelectorAll('[data-pid]').forEach(c=>c.addEventListener('change',()=>togglePaid(c.dataset.pid)));
+}
+
+function colorOf(bks){
+  const hd=bks.filter(b=>b.head);if(!hd.length)return null;
+  if(hd.length>1)return 'multi';
+  const d=dogs.find(x=>x.id===hd[0].did);return d?(d.type==='solo'?'solo':'group'):'multi';
+}
+function contColor(bks){if(!bks.length)return null;const d=dogs.find(x=>x.id===bks[0].did);return d?(d.type==='solo'?'solo':'group'):'multi';}
+
+function renderSchedule(){
+  const used=new Set(Object.keys(sched).map(k=>k.split('|')[1]));
+  const times=TIMES.filter(t=>used.has(t)||(toM(t)>=toM('7:00')&&toM(t)<=toM('17:30')));
+  used.forEach(t=>{if(!times.includes(t))times.push(t);});
+  times.sort((a,b)=>toM(a)-toM(b));
+  const tbl=document.getElementById('schedTable');
+  let html='<thead><tr><th class="tc">Time</th>'+DAYS.map(d=>'<th>'+d+'</th>').join('')+'</tr></thead><tbody>';
+  times.forEach(hr=>{
+    html+='<tr><td class="ttime">'+hr+'</td>';
+    DAYS.forEach(day=>{
+      const k=key(day,hr),bks=sched[k]||[],hds=bks.filter(b=>b.head),cts=bks.filter(b=>!b.head);
+      const col=hds.length?colorOf(bks):(cts.length?contColor(cts):null);
+      let cls='slot';
+      if(hds.length)cls+=' '+(col==='solo'?'solo-slot':col==='group'?'group-slot':'multi-slot');
+      else if(cts.length)cls+=' '+(col==='solo'?'solo-cont':col==='group'?'group-cont':'multi-cont');
+      let inner='';
+      if(hds.length){
+        const names=hds.map(b=>{const d=dogs.find(x=>x.id===b.did);return d?h(d.name):'?';}).join(', ');
+        inner='<div class="slot-txt">'+names+'<br><span style="font-size:8px;opacity:.7">'+hds[0].start+'–'+hds[0].end+'</span></div>'+
+              '<button class="slot-x" data-clr="'+h(k)+'">×</button>';
+      }else if(cts.length){
+        const names=[...new Set(cts.map(b=>{const d=dogs.find(x=>x.id===b.did);return d?h(d.name):'?';}))].join(', ');
+        inner='<div class="slot-txt" style="opacity:.65">'+names+'</div>';
+      }else{
+        inner='<span class="slot-plus">+</span>';
+      }
+      const openable=!cts.length;
+      html+='<td><div class="'+cls+'"'+(openable?' data-open="'+h(day)+'|'+h(hr)+'"':'')+'>'+inner+'</div></td>';
+    });
+    html+='</tr>';
+  });
+  html+='</tbody>';tbl.innerHTML=html;
+  document.querySelectorAll('[data-clr]').forEach(b=>b.addEventListener('click',e=>{e.stopPropagation();clearHead(b.dataset.clr);}));
+  document.querySelectorAll('[data-open]').forEach(div=>div.addEventListener('click',()=>{const[day,hr]=div.dataset.open.split('|');openBook(day,hr);}));
+}
+
+function clearHead(k){
+  const day=k.split('|')[0];
+  (sched[k]||[]).filter(b=>b.head).forEach(hd=>{
+    inRange(hd.start,hd.end).forEach(t=>{const kk=key(day,t);if(sched[kk]){sched[kk]=sched[kk].filter(b=>b.did!==hd.did);if(!sched[kk].length)delete sched[kk];}});
+  });
+  render();
+}
+
+function renderSummary(){
+  document.getElementById('sumDogs').textContent=dogs.length;
+  document.getElementById('sumAdded').textContent=dogs.reduce((n,d)=>n+d.sessions,0);
+  document.getElementById('sumSessions').textContent=Object.values(sched).reduce((n,a)=>n+a.filter(b=>b.head).length,0);
+  const total=dogs.reduce((n,d)=>n+rev(d),0),paid=dogs.filter(d=>d.paid).reduce((n,d)=>n+rev(d),0);
+  document.getElementById('sumRevenue').textContent='$'+total;
+  document.getElementById('sumPaid').textContent='$'+paid;
+  document.getElementById('sumOwed').textContent='$'+(total-paid);
+  const bd=document.getElementById('breakdown');
+  if(!dogs.length){bd.innerHTML='';return;}
+  bd.innerHTML=dogs.map(d=>{
+    const s=nSched(d),r=rev(d);
+    const note=d.type==='group'?d.sessions+' group walk'+(d.sessions!==1?'s':'')+' x $'+RATES.group:d.sessions===3?'3-session solo package':'$'+RATES.solo1+'/walk';
+    return '<div class="brow"><span><span style="font-weight:700">'+h(d.name)+'</span> <span style="color:var(--muted);font-size:12px">'+h(note)+' · '+s+'/'+d.sessions+' scheduled</span></span>'+
+      '<div style="display:flex;align-items:center;gap:6px"><span class="badge '+(d.paid?'paid-b':'unpaid-b')+'">'+(d.paid?'paid':'unpaid')+'</span><span style="font-weight:700;color:var(--group-text)">$'+r+'</span></div></div>';
+  }).join('');
+}
+
+function render(){renderDogs();renderSchedule();renderSummary();}
+
+/* BOOK MODAL */
+function openBook(day,hr){
+  pending={day,hr,sel:new Set()};
+  const mD=document.getElementById('mDay'),mS=document.getElementById('mStart'),mE=document.getElementById('mEnd');
+  fillSel(mD,DAYS,day);fillSel(mS,TIMES,hr);syncEnd(mS,mE,true);
+  document.getElementById('mDur').textContent=dur(mS.value,mE.value);
+  document.getElementById('bookWarn').textContent='';
+  document.getElementById('bookTitle').textContent='Book — '+day+' '+hr;
+  mD.onchange=()=>{pending.day=mD.value;renderPicks();};
+  mS.onchange=()=>{syncEnd(mS,mE,true);document.getElementById('mDur').textContent=dur(mS.value,mE.value);renderPicks();};
+  mE.onchange=()=>{document.getElementById('mDur').textContent=dur(mS.value,mE.value);renderPicks();};
+  renderPicks();
+  document.getElementById('bookModal').classList.add('open');
+}
+function renderPicks(){
+  const day=document.getElementById('mDay').value,s=document.getElementById('mStart').value,e=document.getElementById('mEnd').value;
+  const slots=inRange(s,e),el=document.getElementById('dpickList');
+  if(!dogs.length){el.innerHTML='<div class="empty-txt">Add dogs first</div>';return;}
+  el.innerHTML=dogs.map(d=>{
+    const sel=pending.sel.has(d.id),ns=nSched(d),full=ns>=d.sessions&&!sel;
+    const conflict=!sel&&slots.some(t=>{const bks=(sched[key(day,t)]||[]).filter(b=>b.did!==d.id);return(d.type==='solo'&&bks.some(b=>b.head))||bks.some(b=>b.head&&b.dt==='solo')||bks.some(b=>!b.head);});
+    const dis=full||conflict;
+    return '<button class="dpick" data-pick="'+h(d.id)+'"'+(dis?' disabled':'')+'>'+
+      '<input type="checkbox"'+(sel?' checked':'')+(dis?' disabled':'')+'/> '+
+      '<span style="flex:1;font-weight:600">'+h(d.name)+' <span style="font-size:11px;color:var(--muted);font-weight:400">'+ns+'/'+d.sessions+'</span></span>'+
+      '<span class="badge '+(d.type==='solo'?'solo-b':'group-b')+'">'+d.type+'</span>'+
+      (full?'<span style="font-size:11px;color:var(--muted)">full</span>':conflict?'<span style="font-size:11px;color:var(--muted)">conflict</span>':'')+
+    '</button>';
+  }).join('');
+  document.querySelectorAll('[data-pick]').forEach(b=>b.addEventListener('click',()=>togglePick(b.dataset.pick)));
+}
+function togglePick(id){
+  if(pending.sel.has(id)){pending.sel.delete(id);}
+  else{
+    const dog=dogs.find(d=>d.id===id);if(!dog)return;
+    const day=document.getElementById('mDay').value,s=document.getElementById('mStart').value,e=document.getElementById('mEnd').value;
+    for(const t of inRange(s,e)){
+      const bks=(sched[key(day,t)]||[]).filter(b=>b.did!==id);
+      if(dog.type==='solo'&&bks.some(b=>b.head)){document.getElementById('bookWarn').textContent='Solo dogs need an empty slot.';return;}
+      if(bks.some(b=>b.head&&b.dt==='solo')){document.getElementById('bookWarn').textContent='Slot has a solo dog.';return;}
+      if(bks.some(b=>!b.head)){document.getElementById('bookWarn').textContent='Slot is blocked.';return;}
+    }
+    if(nSched(dog)>=dog.sessions){document.getElementById('bookWarn').textContent=dog.name+' is fully booked.';return;}
+    pending.sel.add(id);
+  }
+  document.getElementById('bookWarn').textContent='';renderPicks();
+}
+function confirmBook(){
+  const day=document.getElementById('mDay').value,s=document.getElementById('mStart').value,e=document.getElementById('mEnd').value;
+  const slots=inRange(s,e);
+  pending.sel.forEach(id=>{
+    const dog=dogs.find(d=>d.id===id);if(!dog)return;
+    slots.forEach(t=>{const k=key(day,t);if(sched[k]){sched[k]=sched[k].filter(b=>b.did!==id);if(!sched[k].length)delete sched[k];}});
+    slots.forEach((t,i)=>{const k=key(day,t);if(!sched[k])sched[k]=[];sched[k].push({did:id,dt:dog.type,head:i===0,start:s,end:e});});
+  });
+  document.getElementById('bookModal').classList.remove('open');pending=null;render();
+}
+
+function toast(msg,type){
+  const el=document.getElementById('toast');el.textContent=msg;el.className='toast'+(type?' '+type:'');
+  el.classList.add('show');setTimeout(()=>el.classList.remove('show'),3500);
+}
+
+/* INIT */
+document.addEventListener('DOMContentLoaded',function(){
+  document.getElementById('qbDay').innerHTML='<option value="">— none —</option>'+DAYS.map(d=>'<option>'+d+'</option>').join('');
+  const qS=document.getElementById('qbStart'),qE=document.getElementById('qbEnd');
+  fillSel(qS,TIMES,'9:00');syncEnd(qS,qE,true);
+  document.getElementById('qbDuration').textContent=dur(qS.value,qE.value);
+  qS.addEventListener('change',()=>{syncEnd(qS,qE,true);document.getElementById('qbDuration').textContent=dur(qS.value,qE.value);});
+  qE.addEventListener('change',()=>{document.getElementById('qbDuration').textContent=dur(qS.value,qE.value);});
+  fillSel(document.getElementById('autoStart'),TIMES,'9:00');
+  document.getElementById('weekLabel').value='Week of '+new Date().toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'});
+  document.getElementById('dogSessions').addEventListener('change',function(){
+    const is3=this.value==='3';
+    document.getElementById('qbSection').classList.toggle('disabled',is3);
+    document.getElementById('qbHint').textContent=is3?'Quick-book is for 1-session dogs.':'';
+  });
+  gsUrl=localStorage.getItem('gsUrl')||'';
+  if(gsUrl){document.getElementById('gsUrl').value=gsUrl;setStatus('ok');}
+  document.getElementById('btnAddDog').addEventListener('click',addDog);
+  document.getElementById('dogName').addEventListener('keydown',e=>{if(e.key==='Enter')addDog();});
+  document.getElementById('btnAuto').addEventListener('click',autoSched);
+  document.getElementById('btnTestGs').addEventListener('click',testGs);
+  document.getElementById('btnSaveWeek').addEventListener('click',saveWeek);
+  document.getElementById('btnOpenWeeks').addEventListener('click',openWeeks);
+  document.getElementById('btnBook').addEventListener('click',confirmBook);
+  document.getElementById('btnCancelBook').addEventListener('click',()=>{document.getElementById('bookModal').classList.remove('open');pending=null;});
+  document.getElementById('btnCloseWeeks').addEventListener('click',()=>document.getElementById('weeksModal').classList.remove('open'));
+  document.getElementById('bookModal').addEventListener('click',function(e){if(e.target===this){this.classList.remove('open');pending=null;}});
+  document.getElementById('weeksModal').addEventListener('click',function(e){if(e.target===this)this.classList.remove('open');});
+  render();
+});
+</script>
+</body>
+</html>
