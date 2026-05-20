@@ -11,7 +11,7 @@ A weekly dog walk scheduling app that connects to Google Sheets for persistent t
 1. Create a new GitHub repository (e.g. `dog-walk-scheduler`)
 2. Upload `index.html` to the root of the repo
 3. Go to **Settings → Pages → Source** and select `main` branch, `/ (root)`
-4. Your app will be live at `https://yourusername.github.io/dog-walk-scheduler`
+4. Your app will be live at https://smil936.github.io/Dog_walking_schedule
 
 ---
 
@@ -42,7 +42,7 @@ This is the bridge between your app and Google Sheets. It only takes a few minut
 9. You'll be asked to authorize — click through the Google permissions (it's your own script accessing your own sheet)
 
 10. Copy the **Web app URL** — it looks like:
-    `https://script.google.com/macros/s/XXXXXXXXXX/exec`
+    `(https://script.google.com/macros/s/AKfycbywORsPagJLfc2KNBCBNeHO_gRYu-MM-TcNraFSKNIrzg3vVpZ3k2Fy9lcRKyUEnZ05/exec)`
 
 ---
 
